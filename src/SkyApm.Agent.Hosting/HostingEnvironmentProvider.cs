@@ -18,7 +18,7 @@
 
 using Microsoft.Extensions.Hosting;
 
-#if NETSTANDARD2_0
+#if NETCOREAPP2_1
 
 using IHostEnvironment = Microsoft.Extensions.Hosting.IHostingEnvironment;
 
