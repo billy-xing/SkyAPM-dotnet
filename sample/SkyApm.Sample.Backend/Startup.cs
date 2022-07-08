@@ -10,6 +10,12 @@ using SkyApm.Sample.Backend.Services;
 using SkyApm.Sample.GrpcServer;
 using SkyApm.Tracing;
 
+#if NETCOREAPP2_1
+
+using IHostEnvironment = Microsoft.Extensions.Hosting.IHostingEnvironment;
+
+#endif
+
 namespace SkyApm.Sample.Backend
 {
     public class Startup
