@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Hosting;
 
+
 namespace SkyApm.Sample.Backend
 {
     public class Program
@@ -13,9 +14,14 @@ namespace SkyApm.Sample.Backend
 
 #if NETCOREAPP2_1
 
-        public static IWebHost BuildHost(string[] args) =>
-            WebHost.CreateDefaultBuilder<Startup>(args)
-                .Build();
+        public static IWebHost BuildHost(string[] args)
+        {
+            var builder = WebHost.CreateDefaultBuilder<Startup>(args);
+
+            builder.UseStartup<Startup>();
+            var host = builder.Build();
+            return host;
+        }
 
 #else
 

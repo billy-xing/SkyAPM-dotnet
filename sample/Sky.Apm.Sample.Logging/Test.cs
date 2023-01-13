@@ -16,20 +16,25 @@
  *
  */
 
+using SkyApm.Diagnostics.Logging;
+
 namespace Sky.Apm.Sample.Logging
 {
     public class Test
     {
         private readonly ILogger _logger;
+        private readonly ISkyApmLogger<Test> _skyApmlogger;
 
-        public Test(ILogger<Test> logger)
+        public Test(ILogger<Test> logger, ISkyApmLogger<Test> skyApmlogger)
         {
             _logger = logger;
+            _skyApmlogger = skyApmlogger;
         }
 
         public void Create()
         {
             _logger.LogError("创建了一个用户对象",new List<string> { "asdasdas","3ewqeqdad","q34asdase2qq"});
+            _skyApmlogger.Error($"创建了一个用户对象",new Exception("创建用户对象") );
         }
     }
 }

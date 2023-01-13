@@ -9,6 +9,7 @@ using SkyApm.Sample.Backend.Sampling;
 using SkyApm.Sample.Backend.Services;
 using SkyApm.Sample.GrpcServer;
 using SkyApm.Tracing;
+using SkyApm.Diagnostics.Logging;
 
 #if NETCOREAPP2_1
 
@@ -33,6 +34,7 @@ namespace SkyApm.Sample.Backend
 #if NETCOREAPP2_1
 
             services.AddMvc();
+            services.AddPushSkyApmLogger(x => x.Enable = true);
 
 #else
              services.AddControllers();

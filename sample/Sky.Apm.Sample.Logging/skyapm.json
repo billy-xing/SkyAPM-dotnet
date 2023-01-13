@@ -1,6 +1,6 @@
 {
   "SkyWalking": {
-    "ServiceName": "Sky.Apm.Sample.Logging",
+    "ServiceName": "DEV::Sky.Apm.Sample.Logging",
     "Namespace": "",
     "HeaderVersions": [
       "sw8"
@@ -19,7 +19,7 @@
       "QueueSize": 30000,
       "BatchSize": 3000,
       "gRPC": {
-        "Servers": "101.34.26.221:40009",
+        "Servers": "172.16.112.40:32346",
         "Timeout": 10000,
         "ConnectTimeout": 10000,
         "ReportTimeout": 600000 //,
