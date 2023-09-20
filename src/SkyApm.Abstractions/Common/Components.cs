@@ -45,5 +45,15 @@ namespace SkyApm.Common
         public static readonly StringOrIntValue GRPC = new StringOrIntValue(23, "GRPC");
 
         public static readonly StringOrIntValue MongoDBCLIENT = new StringOrIntValue(42, "MongoDB.Driver");
+
+        public static readonly StringOrIntValue Redis = new StringOrIntValue(7, "Redis");
+
+        public static readonly StringOrIntValue SSRedis = new StringOrIntValue(3021, "ServiceStack.Redis");
+
+        public static readonly StringOrIntValue SERedis = new StringOrIntValue(3005, "StackExchange.Redis");
+
+        public static readonly StringOrIntValue RabbitMQProducer = new StringOrIntValue(52, "RabbitMQ.Producer");
+
+        public static readonly StringOrIntValue RabbitMQConsumer = new StringOrIntValue(53, "RabbitMQ.Consumer");
     }
 }

@@ -21,6 +21,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using SkyApm.Logging;
 using SkyApm.Common;
+using System.Linq;
+using System.Collections.Concurrent;
 
 namespace SkyApm.Diagnostics
 {
@@ -29,6 +31,8 @@ namespace SkyApm.Diagnostics
         private readonly ILogger _logger;
         private readonly ILoggerFactory _loggerFactory;
         private readonly IEnumerable<ITracingDiagnosticProcessor> _tracingDiagnosticProcessors;
+
+        private static ConcurrentQueue<string> listenerNames = new ConcurrentQueue<string>();
 
         public TracingDiagnosticProcessorObserver(IEnumerable<ITracingDiagnosticProcessor> tracingDiagnosticProcessors,
             ILoggerFactory loggerFactory)
@@ -49,14 +53,19 @@ namespace SkyApm.Diagnostics
 
         public void OnNext(DiagnosticListener listener)
         {
-            foreach (var diagnosticProcessor in _tracingDiagnosticProcessors.Distinct(x => x.ListenerName))
+            if (!listenerNames.Contains(listener.Name))
             {
-                if (listener.Name == diagnosticProcessor.ListenerName)
+                var lst = _tracingDiagnosticProcessors.Distinct(x => x.ListenerName).ToList();
+                foreach (var diagnosticProcessor in lst)
                 {
-                    Subscribe(listener, diagnosticProcessor);
-                    _logger.Information(
-                        $"Loaded diagnostic listener [{diagnosticProcessor.ListenerName}].");
+                    if (listener.Name == diagnosticProcessor.ListenerName)
+                    {
+                        Subscribe(listener, diagnosticProcessor);
+                        _logger.Information(
+                            $"Loaded diagnostic listener [{diagnosticProcessor.ListenerName}].");
+                    }
                 }
+                listenerNames.Enqueue(listener.Name);
             }
         }
 

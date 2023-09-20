@@ -74,6 +74,15 @@ namespace SkyApm.Tracing.Segments
             return this;
         }
 
+        public string GetTag(string key)
+        {
+            return Tags.GetTag(key);
+        }
+        public bool HasTag(string key)
+        {
+            return Tags.HasTag(key);
+        }
+
         public void AddLog(params LogEvent[] events)
         {
             var log = new SpanLog(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), events);
@@ -93,6 +102,17 @@ namespace SkyApm.Tracing.Segments
         internal void AddTag(string key, string value)
         {
             tags[key] = value;
+        }
+        internal string GetTag(string key)
+        {
+            if(tags.ContainsKey(key)) 
+                return tags[key];
+            return null;
+        }
+
+        internal bool HasTag(string key)
+        {
+            return tags.ContainsKey(key);
         }
 
         public IEnumerator<KeyValuePair<string, string>> GetEnumerator()

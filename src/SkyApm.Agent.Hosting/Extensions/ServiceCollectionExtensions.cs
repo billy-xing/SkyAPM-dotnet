@@ -36,6 +36,7 @@ using SkyApm.Utilities.Logging;
 using System;
 using SkyApm;
 using SkyApm.Agent.Hosting;
+using SkyApm.Diagnostics.MSLogging;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -75,7 +76,8 @@ namespace Microsoft.Extensions.DependencyInjection
                  .AddGrpcClient()
                  .AddSqlClient()
                  .AddGrpc()
-                 .AddEntityFrameworkCore(c => c.AddPomeloMysql().AddNpgsql().AddSqlite());
+                 .AddEntityFrameworkCore(c => c.AddPomeloMysql().AddNpgsql().AddSqlite())
+                 .AddMSLogging(); 
 
             extensionsSetup?.Invoke(extensions);
 
