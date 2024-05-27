@@ -26,6 +26,7 @@ using SkyApm.Tracing;
 using SkyApm.Tracing.Segments;
 using SmartSql;
 using SmartSql.Diagnostics;
+using SmartSql.Utils;
 
 namespace SkyApm.Diagnostics.SmartSql
 {
@@ -36,13 +37,16 @@ namespace SkyApm.Diagnostics.SmartSql
         private readonly ITracingContext _tracingContext;
         private readonly ILocalSegmentContextAccessor _localSegmentContextAccessor;
         private readonly TracingConfig _tracingConfig;
+        private readonly IPeerFormatter _peerFormatter;
 
         public SmartSqlTracingDiagnosticProcessor(ITracingContext tracingContext,
-            ILocalSegmentContextAccessor localSegmentContextAccessor, IConfigAccessor configAccessor)
+            ILocalSegmentContextAccessor localSegmentContextAccessor, IConfigAccessor configAccessor,
+            IPeerFormatter peerFormatter)
         {
             _tracingContext = tracingContext;
             _localSegmentContextAccessor = localSegmentContextAccessor;
             _tracingConfig = configAccessor.Get<TracingConfig>();
+            _peerFormatter = peerFormatter;
         }
         private void AddConnectionTag(SegmentContext context, DbConnection dbConnection)
         {
@@ -52,7 +56,7 @@ namespace SkyApm.Diagnostics.SmartSql
             }
             if (dbConnection.DataSource != null)
             {
-                context.Span.Peer = new Common.StringOrIntValue(dbConnection.DataSource);
+                context.Span.Peer = _peerFormatter.GetDbPeer(dbConnection);
             }
             if (dbConnection.Database != null)
             {
@@ -249,7 +253,11 @@ namespace SkyApm.Diagnostics.SmartSql
             var context = CreateSmartSqlLocalSegmentContext(eventData.Operation);
             if (eventData.ExecutionContext.Request.RealSql != null)
             {
-                context.Span.AddTag(Common.Tags.DB_STATEMENT, eventData.ExecutionContext.Request.RealSql);
+                var sql = eventData.ExecutionContext.FormatSql(true);
+                var spliter = "Sql with parameter value: ";
+                var startIndex = sql.IndexOf(spliter) + spliter.Length;
+                sql = sql.Substring(startIndex);
+                context.Span.AddTag(Common.Tags.DB_STATEMENT, sql);
             }
         }
         [DiagnosticName(SmartSqlDiagnosticListenerExtensions.SMART_SQL_AFTER_COMMAND_EXECUTER_EXECUTE)]

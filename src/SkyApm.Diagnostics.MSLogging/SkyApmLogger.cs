@@ -18,7 +18,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Microsoft.Extensions.Logging;
+using SkyApm.Common;
+using SkyApm.Config;
 using SkyApm.Tracing;
 using SkyApm.Tracing.Segments;
 using SkyApm.Transport;
@@ -29,37 +32,66 @@ namespace SkyApm.Diagnostics.MSLogging
     {
         private readonly string _categoryName;
         private readonly ISkyApmLogDispatcher _skyApmLogDispatcher;
+        private readonly ISegmentContextAccessor _segmentContextAccessor;
         private readonly IEntrySegmentContextAccessor _entrySegmentContextAccessor;
+        private readonly TracingConfig _tracingConfig;
+        private readonly DiagnosticsLoggingConfig _logCollectorConfig;
 
         public SkyApmLogger(string categoryName, ISkyApmLogDispatcher skyApmLogDispatcher,
-            IEntrySegmentContextAccessor entrySegmentContextAccessor)
+            ISegmentContextAccessor segmentContextAccessor,
+            IEntrySegmentContextAccessor entrySegmentContextAccessor,
+            IConfigAccessor configAccessor)
         {
             _categoryName = categoryName;
             _skyApmLogDispatcher = skyApmLogDispatcher;
+            _segmentContextAccessor = segmentContextAccessor;
             _entrySegmentContextAccessor = entrySegmentContextAccessor;
+            _tracingConfig = configAccessor.Get<TracingConfig>();
+            _logCollectorConfig = configAccessor.Get<DiagnosticsLoggingConfig>();
         }
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception,
-            Func<TState, Exception, string> formatter)
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
         {
-            var logs = new Dictionary<string, object>
+            if (!IsEnabled(logLevel)) return;
+
+            var tags = new Dictionary<string, object>
             {
-                { "className", _categoryName },
-                { "Level", logLevel },
-                { "logMessage", state.ToString() ?? "" }
+                { "logger", _categoryName },
+                { "level", logLevel },
+                { "thread", Thread.CurrentThread.ManagedThreadId },
             };
-            SegmentContext segmentContext = _entrySegmentContextAccessor.Context;
-            var logContext = new LoggerContext()
+            if (exception != null)
             {
-                Logs = logs,
-                SegmentContext = segmentContext,
+                tags["errorType"] = exception.GetType().ToString();
+            }
+            var message = state.ToString();
+            if (exception != null)
+            {
+                message += "\r\n" + (exception.HasInnerExceptions() ? exception.ToDemystifiedString(_tracingConfig.ExceptionMaxDepth) : exception.ToString());
+            }
+            SegmentContext segmentContext = _segmentContextAccessor.Context;
+            var logContext = new LogRequest()
+            {
+                Message = message ?? string.Empty,
+                Tags = tags,
+                SegmentReference = segmentContext == null
+                    ? null
+                    : new LogSegmentReference()
+                    {
+                        TraceId = segmentContext.TraceId,
+                        SegmentId = segmentContext.SegmentId,
+                    },
             };
+            if (_entrySegmentContextAccessor.Context != null)
+            {
+                logContext.Endpoint = _entrySegmentContextAccessor.Context.Span.OperationName.ToString();
+            }
             _skyApmLogDispatcher.Dispatch(logContext);
         }
 
-        public bool IsEnabled(LogLevel logLevel) => true;
+        public bool IsEnabled(LogLevel logLevel) => (int)logLevel >= (int)_logCollectorConfig.CollectLevel;
 
-
-        public IDisposable BeginScope<TState>(TState state) => default;
+        public IDisposable BeginScope<TState>(TState state) => default!;
     }
 }

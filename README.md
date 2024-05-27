@@ -3,7 +3,7 @@ SkyAPM C#/.NET instrument agent
 
 <img src="https://skyapmtest.github.io/page-resources/SkyAPM/skyapm.png" alt="Sky Walking logo" height="90px" align="right" />
 
-[Apache SkyWalking](https://github.com/apache/incubator-skywalking) is an APM designed for microservices, cloud native and container-based (Docker, K8s, Mesos) architectures. **SkyAPM-dotnet** provides the native support agent in C# and .NETStandard platform, with the helps from Apache SkyWalking committer team.
+[Apache SkyWalking](https://github.com/apache/incubator-skywalking) is an APM designed for microservices, cloud native and container-based (Docker, K8s, Mesos) architectures. **SkyAPM-dotnet** provides the native support agent in C# and .NETStandard platform, with help from the Apache SkyWalking committer team.
 
 [![issues](https://img.shields.io/github/issues-raw/skyapm/skyapm-dotnet.svg?style=flat-square)](https://github.com/SkyAPM/SkyAPM-dotnet/issues)
 [![pulls](https://img.shields.io/github/issues-pr-raw/skyapm/skyapm-dotnet.svg?style=flat-square)](https://github.com/SkyAPM/SkyAPM-dotnet/pulls)
@@ -22,7 +22,6 @@ SkyAPM C#/.NET instrument agent
 | Package Name |  NuGet | MyGet | Downloads 
 |--------------|  ------- |  ------- |  ---- 
 | SkyAPM.Agent.AspNetCore | [![nuget](https://img.shields.io/nuget/v/SkyAPM.Agent.AspNetCore.svg?style=flat-square)](https://www.nuget.org/packages/SkyAPM.Agent.AspNetCore) | [![myget](https://img.shields.io/myget/skyapm-dotnet/vpre/SkyAPM.Agent.AspNetCore.svg?style=flat-square)](https://www.myget.org/feed/skyapm-dotnet/package/nuget/SkyAPM.Agent.AspNetCore) | [![stats](https://img.shields.io/nuget/dt/SkyAPM.Agent.AspNetCore.svg?style=flat-square)](https://www.nuget.org/stats/packages/SkyAPM.Agent.AspNetCore?groupby=Version) 
-| SkyAPM.Agent.AspNet | [![nuget](https://img.shields.io/nuget/v/SkyAPM.Agent.AspNet.svg?style=flat-square)](https://www.nuget.org/packages/SkyAPM.Agent.AspNet) | [![myget](https://img.shields.io/myget/skyapm-dotnet/vpre/SkyAPM.Agent.AspNet.svg?style=flat-square)](https://www.myget.org/feed/skyapm-dotnet/package/nuget/SkyAPM.Agent.AspNet) | [![](https://img.shields.io/nuget/dt/SkyAPM.Agent.AspNet.svg?style=flat-square)](https://www.nuget.org/stats/packages/SkyAPM.Agent.AspNet?groupby=Version)
 | SkyAPM.Agent.GeneralHost | [![nuget](https://img.shields.io/nuget/v/SkyAPM.Agent.GeneralHost.svg?style=flat-square)](https://www.nuget.org/packages/SkyAPM.Agent.GeneralHost) | [![myget](https://img.shields.io/myget/skyapm-dotnet/vpre/SkyAPM.Agent.GeneralHost.svg?style=flat-square)](https://www.myget.org/feed/skyapm-dotnet/package/nuget/SkyAPM.Agent.GeneralHost) | [![](https://img.shields.io/nuget/dt/SkyAPM.Agent.GeneralHost.svg?style=flat-square)](https://www.nuget.org/stats/packages/SkyAPM.Agent.GeneralHost?groupby=Version)  
 
 > MyGet feed URL https://www.myget.org/F/skyapm-dotnet/api/v3/index.json

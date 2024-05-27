@@ -16,6 +16,8 @@
  *
  */
 
+using System;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using SkyApm.Config;
 using SkyApm.Diagnostics;
@@ -24,7 +26,6 @@ using SkyApm.Diagnostics.Grpc;
 using SkyApm.Diagnostics.Grpc.Net.Client;
 using SkyApm.Diagnostics.HttpClient;
 using SkyApm.Diagnostics.SqlClient;
-using SkyApm.Logging;
 using SkyApm.Sampling;
 using SkyApm.Service;
 using SkyApm.Tracing;
@@ -33,24 +34,62 @@ using SkyApm.Transport.Grpc;
 using SkyApm.Utilities.Configuration;
 using SkyApm.Utilities.DependencyInjection;
 using SkyApm.Utilities.Logging;
-using System;
 using SkyApm;
 using SkyApm.Agent.Hosting;
 using SkyApm.Diagnostics.MSLogging;
+using SkyApm.PeerFormatters.SqlClient;
+using SkyApm.PeerFormatters.MySqlConnector;
+using ILoggerFactory = SkyApm.Logging.ILoggerFactory;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddSkyAPM(this IServiceCollection services, Action<SkyApmExtensions> extensionsSetup = null)
+        public static IServiceCollection AddSkyAPM(this IServiceCollection services,
+            Action<SkyApmExtensions> extensionsSetup = null)
         {
+            string environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            if (environment == null || environment.Length < 1)
+            {
+                environment = "Development";
+            }
+
+            IConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
+            configurationBuilder.AddJsonFile("skyapm.json", true);
+            configurationBuilder.AddJsonFile("skyapm." + environment + ".json", true);
+            IConfiguration configuration = configurationBuilder.Build();
+
+            services.AddSkyAPM(configuration,extensionsSetup);
+            return services;
+        }
+
+        public static IServiceCollection AddSkyAPM(this IServiceCollection services, IConfiguration configuration,
+          Action<SkyApmExtensions> extensionsSetup = null)
+        {
+            #region can be optimized
+
+            string enable = configuration?.GetSection("SkyWalking:Enable").Value;
+            if (enable != null && "false".Equals(enable.ToLower()))
+            {
+                return services;
+            }
+
+            string serviceName = configuration?.GetSection("SkyWalking:ServiceName").Value ?? "";
+            if (null == serviceName || serviceName.Length < 1)
+            {
+                return services;
+            }
+
+            Environment.SetEnvironmentVariable("SKYWALKING__SERVICENAME", serviceName);
+
+            #endregion
+
             services.AddSkyAPMCore(extensionsSetup);
             return services;
         }
 
-        
-
-        internal static IServiceCollection AddSkyAPMCore(this IServiceCollection services, Action<SkyApmExtensions> extensionsSetup = null)
+        private static IServiceCollection AddSkyAPMCore(this IServiceCollection services,
+            Action<SkyApmExtensions> extensionsSetup = null)
         {
             if (services == null)
             {
@@ -61,7 +100,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IExecutionService, RegisterService>();
             services.AddSingleton<IExecutionService, LogReportService>();
             services.AddSingleton<IExecutionService, PingService>();
-            services.AddSingleton<IExecutionService, SegmentReportService>();
+            services.AddSingleton<SegmentReportService>();
             services.AddSingleton<IExecutionService, CLRStatsService>();
             services.AddSingleton<IInstrumentStartup, InstrumentStartup>();
             services.AddSingleton<IRuntimeEnvironment>(RuntimeEnvironment.Instance);
@@ -70,14 +109,18 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IConfigurationFactory, ConfigurationFactory>();
             services.AddSingleton<IHostedService, InstrumentationHostedService>();
             services.AddSingleton<IEnvironmentProvider, HostingEnvironmentProvider>();
-            services.AddTracing().AddSkyApmLogger().AddSampling().AddGrpcTransport().AddSkyApmLogging();
+            services.AddSingleton<ISkyApmLogDispatcher, AsyncQueueSkyApmLogDispatcher>();
+            services.AddSingleton<IPeerFormatter, PeerFormatter>();
+            services.AddTracing().AddSampling().AddGrpcTransport().AddSkyApmLogging();
             var extensions = services.AddSkyApmExtensions()
-                 .AddHttpClient()
-                 .AddGrpcClient()
-                 .AddSqlClient()
-                 .AddGrpc()
-                 .AddEntityFrameworkCore(c => c.AddPomeloMysql().AddNpgsql().AddSqlite())
-                 .AddMSLogging(); 
+                .AddHttpClient()
+                .AddGrpcClient()
+                .AddSqlClient()
+                .AddGrpc()
+                .AddEntityFrameworkCore(c => c.AddPomeloMysql().AddNpgsql().AddSqlite())
+                .AddMSLogging()
+                .AddSqlClientPeerFormatter()
+                .AddMySqlConnectorPeerFormatter();
 
             extensionsSetup?.Invoke(extensions);
 
@@ -93,17 +136,11 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IEntrySegmentContextAccessor, EntrySegmentContextAccessor>();
             services.AddSingleton<ILocalSegmentContextAccessor, LocalSegmentContextAccessor>();
             services.AddSingleton<IExitSegmentContextAccessor, ExitSegmentContextAccessor>();
+            services.AddSingleton<ISegmentContextAccessor, SegmentContextAccessor>();
             services.AddSingleton<ISamplerChainBuilder, SamplerChainBuilder>();
             services.AddSingleton<IUniqueIdGenerator, UniqueIdGenerator>();
             services.AddSingleton<ISegmentContextMapper, SegmentContextMapper>();
             services.AddSingleton<IBase64Formatter, Base64Formatter>();
-            return services;
-        }
-
-        public static IServiceCollection AddSkyApmLogger(this IServiceCollection services)
-        {
-            services.AddSingleton<ISkyApmLogDispatcher, AsyncQueueSkyApmLogDispatcher>();
-            services.AddSingleton<ILoggerContextContextMapper, LoggerContextContextMapper>();
             return services;
         }
 
@@ -120,7 +157,7 @@ namespace Microsoft.Extensions.DependencyInjection
         private static IServiceCollection AddGrpcTransport(this IServiceCollection services)
         {
             services.AddSingleton<ISegmentReporter, SegmentReporter>();
-            services.AddSingleton<ILoggerReporter, LoggerReporter>();
+            services.AddSingleton<ILogReporter, LogReporter>();
             services.AddSingleton<ICLRStatsReporter, CLRStatsReporter>();
             services.AddSingleton<ConnectionManager>();
             services.AddSingleton<IPingCaller, PingCaller>();
@@ -134,6 +171,5 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<ILoggerFactory, DefaultLoggerFactory>();
             return services;
         }
-
     }
 }

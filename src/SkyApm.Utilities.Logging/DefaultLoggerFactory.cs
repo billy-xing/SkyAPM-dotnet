@@ -41,14 +41,30 @@ namespace SkyApm.Utilities.Logging
             _loggerFactory = new MSLoggerFactory();
             var instrumentationConfig = configAccessor.Get<InstrumentConfig>();
 
-            var level = EventLevel(_loggingConfig.Level);
+            var __level = EventLevel(_loggingConfig.Level);
+            long __fileSizeLimitBytes = _loggingConfig.FileSizeLimitBytes ?? 1024 * 1024 * 256;
+            long __flushToDiskInterval = _loggingConfig.FlushToDiskInterval ?? 1000;
+            string __rollingInterval = _loggingConfig.RollingInterval ?? "Day";
+            bool __rollOnFileSizeLimit = _loggingConfig.RollOnFileSizeLimit ?? false;
+            int __retainedFileCountLimit = _loggingConfig.RetainedFileCountLimit ?? 10;
+            long __retainedFileTimeLimit = _loggingConfig.RetainedFileTimeLimit ?? 1000 * 60 * 60 * 24 * 10;
 
             _loggerFactory.AddSerilog(new LoggerConfiguration().MinimumLevel.Verbose().Enrich
                 .WithProperty("SourceContext", null).Enrich
-                .WithProperty(nameof(instrumentationConfig.ServiceName),
-                    instrumentationConfig.ServiceName ?? instrumentationConfig.ApplicationCode).Enrich
-                .FromLogContext().WriteTo.RollingFile(_loggingConfig.FilePath, level, outputTemplate, null, 1073741824,
-                    31, null, false, false, TimeSpan.FromMilliseconds(500)).CreateLogger());
+                .WithProperty(nameof(instrumentationConfig.ServiceName), instrumentationConfig.ServiceName).Enrich
+                .FromLogContext()
+                .WriteTo
+                .Async(o => o.File(
+                    _loggingConfig.FilePath,
+                    __level,
+                    outputTemplate,
+                    fileSizeLimitBytes: __fileSizeLimitBytes,
+                    flushToDiskInterval: TimeSpan.FromMilliseconds(__flushToDiskInterval),
+                    rollingInterval: (RollingInterval)(Enum.Parse(typeof(RollingInterval), __rollingInterval)),
+                    rollOnFileSizeLimit: __rollOnFileSizeLimit,
+                    retainedFileCountLimit: __retainedFileCountLimit,
+                    retainedFileTimeLimit: TimeSpan.FromMilliseconds(__retainedFileTimeLimit)))
+                .CreateLogger());
         }
 
         public SkyApm.Logging.ILogger CreateLogger(Type type)
@@ -58,7 +74,7 @@ namespace SkyApm.Utilities.Logging
 
         private static LogEventLevel EventLevel(string level)
         {
-            return LogEventLevel.TryParse<LogEventLevel>(level, out var logEventLevel)
+            return Enum.TryParse<LogEventLevel>(level, out var logEventLevel)
                 ? logEventLevel
                 : LogEventLevel.Error;
         }
