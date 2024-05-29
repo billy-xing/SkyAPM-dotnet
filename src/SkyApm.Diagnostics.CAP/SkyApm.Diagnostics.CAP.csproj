@@ -8,7 +8,7 @@
         <PackageId>$(PackagePrefix).Diagnostics.CAP</PackageId>
         <PackageTags>SkyWalking;APM;CAP</PackageTags>
         <RootNamespace>SkyApm.Diagnostics.CAP</RootNamespace>
-        <TargetFrameworks>netcoreapp2.1;netcoreapp3.1;net5.0;net6.0;net7.0</TargetFrameworks>
+        <TargetFrameworks>netcoreapp3.1;net5.0;net6.0;net7.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
